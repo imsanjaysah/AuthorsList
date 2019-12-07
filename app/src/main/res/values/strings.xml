@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AuthorsList</string>
+    <string name="retry">ERROR !! Tap to retry.</string>
+
 </resources>
