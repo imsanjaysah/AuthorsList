@@ -8,27 +8,25 @@ package com.sanjay.authorslist.injection.module
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.util.Log
 import com.sanjay.authorslist.AuthorsApplication
 import com.sanjay.authorslist.BuildConfig
 import com.sanjay.authorslist.data.api.AuthorsListService
 import com.sanjay.authorslist.data.api.HeaderInterceptor
-import com.sanjay.authorslist.exception.NoNetworkException
 import com.sanjay.authorslist.extensions.isConnected
 import dagger.Module
 import dagger.Provides
-import okhttp3.OkHttpClient
+import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.CallAdapter
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
-import javax.net.ssl.SSLPeerUnverifiedException
 
 
 /**
@@ -58,36 +56,58 @@ open class ApiServiceModule {
 
     @Provides
     @Singleton
-    internal fun provideHttpClient(headerInterceptor: HeaderInterceptor,
-                                   httpInterceptor: HttpLoggingInterceptor, app: AuthorsApplication): OkHttpClient {
-        val okHttpClientBuilder = OkHttpClient.Builder()
-                .readTimeout(60, TimeUnit.SECONDS)
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .addInterceptor(headerInterceptor)
-                .addInterceptor(httpInterceptor.apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE })
+    internal fun provideHttpClient(
+        headerInterceptor: HeaderInterceptor,
+        httpInterceptor: HttpLoggingInterceptor, app: AuthorsApplication
+    ): OkHttpClient {
 
-        val connectivityManager = app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val cacheSize = (10 * 1024 * 1024).toLong()
+        val httpCacheDirectory = File(app.cacheDir, "Response")
+        val myCache = Cache(httpCacheDirectory, cacheSize)
+
+        val okHttpClientBuilder = OkHttpClient.Builder()
+            .cache(myCache)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .addNetworkInterceptor(REWRITE_RESPONSE_INTERCEPTOR)
+            .addInterceptor(httpInterceptor.apply {
+                level =
+                    if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
+            })
+
+        val connectivityManager =
+            app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
 
         return okHttpClientBuilder
-                .addInterceptor { chain ->
-                    val requestBuilder = chain.request().newBuilder()
-                    requestBuilder.addHeader("User-Agent","a")
-                    if(!connectivityManager.isConnected) {
-                        throw NoNetworkException
-                    }
-                    try {
-                        chain.proceed(requestBuilder.build()).apply {
-                        }
-                    } catch (e: SocketTimeoutException) {
-                        throw NoNetworkException
-                    } catch (e: UnknownHostException) {
-                        throw NoNetworkException
-                    } catch (e: SSLPeerUnverifiedException) {
-                        throw NoNetworkException
-                    }
+            .addInterceptor { chain ->
+
+                var request: Request = chain.request()
+                if (!connectivityManager.isConnected) {
+                    Log.d("Retrofit", "No Internet")
+                    request = request.newBuilder().removeHeader("Pragma")
+                        .header("Cache-Control", "public, only-if-cached").build()
                 }
+                chain.proceed(request)
+            }
+            .build()
+    }
+
+    private val REWRITE_RESPONSE_INTERCEPTOR: Interceptor = Interceptor { chain ->
+        val originalResponse: Response = chain.proceed(chain.request())
+        val cacheControl = originalResponse.header("Cache-Control")
+        if (cacheControl == null || cacheControl.contains("no-store") || cacheControl.contains(
+                "no-cache"
+            ) ||
+            cacheControl.contains("must-revalidate") || cacheControl.contains("max-age=0")
+        ) {
+            originalResponse.newBuilder()
+                .removeHeader("Pragma")
+                .header("Cache-Control", "public, max-age=" + 5000)
                 .build()
+        } else {
+            originalResponse
+        }
     }
 
     @Provides
@@ -104,14 +124,16 @@ open class ApiServiceModule {
 
     @Provides
     @Singleton
-    internal fun provideRetrofit(@Named(BASE_URL) baseUrl: String, converterFactory: Converter.Factory,
-                                 callAdapterFactory: CallAdapter.Factory, client: OkHttpClient): Retrofit {
+    internal fun provideRetrofit(
+        @Named(BASE_URL) baseUrl: String, converterFactory: Converter.Factory,
+        callAdapterFactory: CallAdapter.Factory, client: OkHttpClient
+    ): Retrofit {
         return Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(converterFactory)
-                .addCallAdapterFactory(callAdapterFactory)
-                .client(client)
-                .build()
+            .baseUrl(baseUrl)
+            .addConverterFactory(converterFactory)
+            .addCallAdapterFactory(callAdapterFactory)
+            .client(client)
+            .build()
     }
 
     companion object {
