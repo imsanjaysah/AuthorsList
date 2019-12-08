@@ -1,23 +1,34 @@
 package com.sanjay.authorslist.ui.authors
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import com.sanjay.authorslist.constants.State
-import com.sanjay.authorslist.data.repository.AuthorsRepository
 import com.sanjay.authorslist.data.repository.remote.model.Author
-import io.reactivex.Flowable
+import com.sanjay.authorslist.mockPagedList
+import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSource
+import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSourceFactory
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class AuthorsViewModelTest {
 
+    private var viewModel: AuthorsViewModel? = null
     @Mock
-    lateinit var repository: AuthorsRepository
+    lateinit var pagingDataSourceFactory: AuthorsPagingDataSourceFactory
+
+    @Mock
+    lateinit var pagingDataSource: AuthorsPagingDataSource
 
     @Rule
     @JvmField
@@ -28,28 +39,56 @@ class AuthorsViewModelTest {
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
+
+        whenever(pagingDataSourceFactory.authorsPagingDataSource).thenReturn(pagingDataSource)
+        whenever(pagingDataSourceFactory.authorsPagingDataSource.state).thenReturn(MutableLiveData())
+
+        viewModel = AuthorsViewModel(pagingDataSourceFactory)
     }
 
     @After
     fun close() {
-        //viewModel = null
+        viewModel = null
     }
 
     @Test
-    fun test_authorsApiCall() {
-        val authorsList = emptyList<Author>()
-        val observable = Flowable.just(authorsList)
-        val currentPage = 1
-        val limit = 20
+    fun test_Initialization() {
 
-        whenever(repository.getAuthors(currentPage, limit)).thenReturn(observable)
+        assertNotNull(viewModel?.authorsList)
+        assertNotNull(viewModel?.authorsList)
 
-        val viewModel = AuthorsViewModel(repository)
+        /*viewModel.state.observeForever(observerState)
+        verify(observerState).onChanged(State.LOADING)*/
+    }
 
-        viewModel.state.observeForever(observerState)
+    @Test
+    fun test_Retry() {
+        viewModel?.retry()
 
-        //verify(repository).getAuthors(currentPage, limit)
-        verify(observerState).onChanged(State.LOADING)
+        verify(pagingDataSourceFactory.authorsPagingDataSource).retry()
+
+    }
+
+    @Test
+    fun test_ListIsEmpty() {
+
+        assertTrue(viewModel!!.listIsEmpty())
+
+        val author = Author(1, "Sanjay", "sanjay.sah", "sanjays644@gmail.com", "")
+        val pagedAuthorsList = MutableLiveData(mockPagedList(listOf(author)))
+
+        viewModel?.authorsList = pagedAuthorsList
+
+        assertFalse(viewModel!!.listIsEmpty())
+
+    }
+
+    @Test
+    fun test_Disposable() {
+        viewModel?.disposable
+
+        verify(pagingDataSourceFactory.authorsPagingDataSource).disposable
+
     }
 
 }
