@@ -3,10 +3,7 @@ package com.sanjay.authorslist.ui.authors
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.paging.DataSource
-import androidx.paging.LivePagedListBuilder
-import androidx.paging.PagedList
-import androidx.paging.PositionalDataSource
+import androidx.paging.*
 import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.data.repository.AuthorsRepository
 import com.sanjay.authorslist.data.repository.remote.model.Author
@@ -31,7 +28,8 @@ class AuthorsViewModel @Inject constructor(private val repository: AuthorsReposi
     init {
         //Setting up Paging for fetching the authors in pagination
         val config = PagedList.Config.Builder()
-            .setPageSize(5)
+            .setInitialLoadSizeHint(20)
+            .setPageSize(20)
             .setEnablePlaceholders(false)
             .build()
         authorsList = LivePagedListBuilder<Int, Author>(
@@ -75,16 +73,20 @@ class AuthorsViewModel @Inject constructor(private val repository: AuthorsReposi
     }
 
     inner class AuthorsDataSource() :
-        PositionalDataSource<Author>() {
-        override fun loadInitial(params: LoadInitialParams, callback: LoadInitialCallback<Author>) {
+        PageKeyedDataSource<Int, Author>() {
+        override fun loadInitial(
+            params: LoadInitialParams<Int>,
+            callback: LoadInitialCallback<Int, Author>
+        ) {
             updateState(State.LOADING)
-            Log.d("Authors", "${params.requestedLoadSize} - ${params.requestedStartPosition}")
+            val currentPage = 1
+            val nextPage = currentPage + 1
             //Call api
-            repository.getAuthors(params.requestedStartPosition, params.requestedLoadSize)
+            repository.getAuthors(1, params.requestedLoadSize)
                 .subscribe(
                     { authors ->
                         updateState(State.DONE)
-                        callback.onResult(authors, 0)
+                        callback.onResult(authors, null, nextPage)
 
                     },
                     {
@@ -94,22 +96,26 @@ class AuthorsViewModel @Inject constructor(private val repository: AuthorsReposi
                 ).addToCompositeDisposable(disposable)
         }
 
-        override fun loadRange(params: LoadRangeParams, callback: LoadRangeCallback<Author>) {
+        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Author>) {
             updateState(State.LOADING)
-            Log.d("Authors", "${params.loadSize} - ${params.startPosition}")
+            val currentPage = params.key
+            val nextPage = currentPage + 1
             //Call api
-            repository.getAuthors(params.startPosition, params.loadSize).subscribe(
-                { authors ->
-                    updateState(State.DONE)
-                    callback.onResult(authors)
+            repository.getAuthors(currentPage, params.requestedLoadSize)
+                .subscribe(
+                    { authors ->
+                        updateState(State.DONE)
+                        callback.onResult(authors, nextPage)
 
-                },
-                {
-                    updateState(State.ERROR)
-                    setRetry(Action { loadRange(params, callback) })
-                }
-            ).addToCompositeDisposable(disposable)
+                    },
+                    {
+                        updateState(State.ERROR)
+                        setRetry(Action { loadAfter(params, callback) })
+                    }
+                ).addToCompositeDisposable(disposable)
+        }
 
+        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Author>) {
         }
     }
 }

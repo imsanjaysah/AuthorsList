@@ -1,14 +1,15 @@
 package com.sanjay.authorslist.ui.posts
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.paging.DataSource
 import androidx.paging.LivePagedListBuilder
+import androidx.paging.PageKeyedDataSource
 import androidx.paging.PagedList
-import androidx.paging.PositionalDataSource
 import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.data.repository.AuthorsRepository
+import com.sanjay.authorslist.data.repository.remote.model.Author
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.extensions.addToCompositeDisposable
 import com.sanjay.authorslist.ui.BaseViewModel
@@ -25,29 +26,23 @@ class PostsViewModel @Inject constructor(private val repository: AuthorsReposito
     var postsList: LiveData<PagedList<Post>>? = null
     //LiveData object for state
     var state = MutableLiveData<State>()
+    var selectedAuthor = MutableLiveData<Author>()
     //Completable required for retrying the API call which gets failed due to any error like no internet
     private var retryCompletable: Completable? = null
 
     init {
         val config = PagedList.Config.Builder()
-            .setPageSize(5)
+            .setInitialLoadSizeHint(20)
+            .setPageSize(20)
             .setEnablePlaceholders(false)
             .build()
-        postsList = LivePagedListBuilder<Int, Post>(
-            PostsDataSourceFactory(1), config
-        ).build()
+        postsList = Transformations.switchMap(selectedAuthor) { author ->
+            LivePagedListBuilder<Int, Post>(
+                PostsDataSourceFactory(author.id), config
+            ).build()
+        }
     }
 
-    fun getPosts(authorId: Int) {
-        //Setting up Paging for fetching the posts in pagination
-        /*val config = PagedList.Config.Builder()
-            .setPageSize(5)
-            .setEnablePlaceholders(false)
-            .build()
-        postsList = LivePagedListBuilder<Int, Post>(
-            PostsDataSourceFactory(authorId), config
-        ).build()*/
-    }
 
     fun listIsEmpty(): Boolean {
         return postsList?.value?.isEmpty() ?: true
@@ -84,17 +79,21 @@ class PostsViewModel @Inject constructor(private val repository: AuthorsReposito
         }
     }
 
-    inner class PostsDataSource(val authorId: Int) :
-        PositionalDataSource<Post>() {
-        override fun loadInitial(params: LoadInitialParams, callback: LoadInitialCallback<Post>) {
+    inner class PostsDataSource(private val authorId: Int) :
+        PageKeyedDataSource<Int, Post>() {
+        override fun loadInitial(
+            params: LoadInitialParams<Int>,
+            callback: LoadInitialCallback<Int, Post>
+        ) {
             updateState(State.LOADING)
-            Log.d("Posts", "${params.requestedLoadSize} - ${params.requestedStartPosition}")
+            val currentPage = 1
+            val nextPage = currentPage + 1
             //Call api
-            repository.getPosts(authorId, params.requestedStartPosition, params.requestedLoadSize)
+            repository.getPosts(authorId,1, params.requestedLoadSize)
                 .subscribe(
                     { posts ->
                         updateState(State.DONE)
-                        callback.onResult(posts, 0)
+                        callback.onResult(posts, null, nextPage)
 
                     },
                     {
@@ -104,22 +103,26 @@ class PostsViewModel @Inject constructor(private val repository: AuthorsReposito
                 ).addToCompositeDisposable(disposable)
         }
 
-        override fun loadRange(params: LoadRangeParams, callback: LoadRangeCallback<Post>) {
+        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Post>) {
             updateState(State.LOADING)
-            Log.d("Posts", "${params.loadSize} - ${params.startPosition}")
+            val currentPage = params.key
+            val nextPage = currentPage + 1
             //Call api
-            repository.getPosts(authorId, params.startPosition, params.loadSize).subscribe(
-                { posts ->
-                    updateState(State.DONE)
-                    callback.onResult(posts)
+            repository.getPosts(authorId, currentPage, params.requestedLoadSize)
+                .subscribe(
+                    { posts ->
+                        updateState(State.DONE)
+                        callback.onResult(posts, nextPage)
 
-                },
-                {
-                    updateState(State.ERROR)
-                    setRetry(Action { loadRange(params, callback) })
-                }
-            ).addToCompositeDisposable(disposable)
+                    },
+                    {
+                        updateState(State.ERROR)
+                        setRetry(Action { loadAfter(params, callback) })
+                    }
+                ).addToCompositeDisposable(disposable)
+        }
 
+        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Post>) {
         }
     }
 }

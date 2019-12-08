@@ -53,7 +53,8 @@ class PostsListActivity : BaseActivity() {
         initState()
         (intent.getParcelableExtra(EXTRA_AUTHOR) as Author).apply {
             setData(this)
-            viewModel.getPosts(this.id)
+            if (savedInstanceState == null)
+                viewModel.selectedAuthor.value = this
 
         }
     }
