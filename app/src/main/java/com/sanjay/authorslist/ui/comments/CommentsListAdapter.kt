@@ -1,9 +1,9 @@
 /*
- * PostsListAdapter.kt
+ * CommentsListAdapter.kt
  * Created by Sanjay.Sah
  */
 
-package com.sanjay.authorslist.ui.posts
+package com.sanjay.authorslist.ui.comments
 
 import android.view.LayoutInflater
 import android.view.View
@@ -13,17 +13,16 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.sanjay.authorslist.R
 import com.sanjay.authorslist.constants.State
-import com.sanjay.authorslist.data.repository.remote.model.Post
+import com.sanjay.authorslist.data.repository.remote.model.Comment
 import com.sanjay.authorslist.utils.Utility.convertUTCtoLocalTime
 import com.squareup.picasso.Picasso
+import kotlinx.android.synthetic.main.item_list_comment.view.*
 import kotlinx.android.synthetic.main.item_list_footer.view.*
-import kotlinx.android.synthetic.main.item_list_post.view.*
 
 
-class PostsListAdapter(
-    private val onItemClick: (Post) -> Unit,
+class CommentsListAdapter(
     private val retry: () -> Unit
-) : PagedListAdapter<Post, RecyclerView.ViewHolder>(diffCallback) {
+) : PagedListAdapter<Comment, RecyclerView.ViewHolder>(diffCallback) {
 
     private val DATA_VIEW_TYPE = 1
     private val FOOTER_VIEW_TYPE = 2
@@ -34,25 +33,20 @@ class PostsListAdapter(
         /**
          * DiffUtils is used improve the performance by finding difference between two lists and updating only the new items
          */
-        private val diffCallback = object : DiffUtil.ItemCallback<Post>() {
-            override fun areItemsTheSame(oldItem: Post, newItem: Post): Boolean {
+        private val diffCallback = object : DiffUtil.ItemCallback<Comment>() {
+            override fun areItemsTheSame(oldItem: Comment, newItem: Comment): Boolean {
                 return oldItem.id == newItem.id
             }
 
-            override fun areContentsTheSame(oldItem: Post, newItem: Post): Boolean {
+            override fun areContentsTheSame(oldItem: Comment, newItem: Comment): Boolean {
                 return oldItem.id == newItem.id
             }
         }
 
     }
 
-    private val onItemClickListener = View.OnClickListener {
-        val post = it.tag as Post
-        onItemClick.invoke(post)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return if (viewType == DATA_VIEW_TYPE) PostViewHolder.create(parent) else ListFooterViewHolder.create(
+        return if (viewType == DATA_VIEW_TYPE) CommentsViewHolder.create(parent) else ListFooterViewHolder.create(
             retry,
             parent
         )
@@ -60,7 +54,7 @@ class PostsListAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (getItemViewType(position) == DATA_VIEW_TYPE)
-            (holder as PostViewHolder).bind(getItem(position)!!, onItemClickListener)
+            (holder as CommentsViewHolder).bind(getItem(position)!!)
         else (holder as ListFooterViewHolder).bind(state)
     }
 
@@ -83,32 +77,28 @@ class PostsListAdapter(
 }
 
 /**
- * ViewHolder to display post's information
+ * ViewHolder to display comment's information
  */
-class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+class CommentsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-    fun bind(
-        post: Post,
-        onItemClickListener: View.OnClickListener
-    ) {
-        if (post.imageUrl?.isNotEmpty() == true) {
-            Picasso.get().load(post.imageUrl).into(itemView.iv_profile)
+    fun bind(comment: Comment) {
+        if (comment.avatarUrl?.isNotEmpty() == true) {
+            Picasso.get().load(comment.avatarUrl).into(itemView.iv_profile)
         } else {
             itemView.iv_profile.setImageResource(R.drawable.ic_tour_guide)
         }
-        itemView.txt_post_title.text = post.title
-        itemView.txt_post_body.text = post.body
-        itemView.txt_date.text = convertUTCtoLocalTime(post.date)
+        itemView.txt_username.text = comment.userName
+        itemView.txt_email.text = comment.email
+        itemView.txt_date.text = convertUTCtoLocalTime(comment.date)
+        itemView.txt_comment_body.text = comment.body
 
-        itemView.tag = post
-        itemView.setOnClickListener(onItemClickListener)
     }
 
     companion object {
-        fun create(parent: ViewGroup): PostViewHolder {
+        fun create(parent: ViewGroup): CommentsViewHolder {
             val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_list_post, parent, false)
-            return PostViewHolder(view)
+                .inflate(R.layout.item_list_comment, parent, false)
+            return CommentsViewHolder(view)
         }
     }
 }

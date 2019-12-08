@@ -24,8 +24,7 @@ class AuthorsRepository @Inject constructor(@Local private val localDataSource: 
     override fun getPosts(authorId: Int, page: Int, limit: Int): Flowable<List<Post>> =
         remoteDataSource.getPosts(authorId, page, limit)
 
-    override fun getComments(postId: Int, page: Int, limit: Int): Flowable<List<Comment>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getComments(postId: Int, page: Int, limit: Int): Flowable<List<Comment>> =
+        remoteDataSource.getComments(postId, page, limit)
 
 }

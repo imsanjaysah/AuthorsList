@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.sanjay.authorslist.injection.ViewModelFactory
 import com.sanjay.authorslist.ui.authors.AuthorsViewModel
+import com.sanjay.authorslist.ui.comments.CommentsViewModel
 import com.sanjay.authorslist.ui.posts.PostsViewModel
 import dagger.Module
 import dagger.Provides
@@ -29,6 +30,11 @@ open class ViewModelModule {
     @IntoMap
     @ViewModelFactory.ViewModelKey(PostsViewModel::class)
     fun providesPostsViewModel(viewModel: PostsViewModel): ViewModel = viewModel
+
+    @Provides
+    @IntoMap
+    @ViewModelFactory.ViewModelKey(CommentsViewModel::class)
+    fun providesCommentsViewModel(viewModel: CommentsViewModel): ViewModel = viewModel
 
 
 }

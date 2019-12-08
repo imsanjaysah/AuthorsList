@@ -26,13 +26,13 @@ interface AuthorsListService {
     /**
      * Api for fetching author's posts
      */
-    @GET("/posts")
+    @GET("/posts?_sort=date&order=asc")
     fun fetchPosts(@Query("authorId") authorId: Int, @Query("_page") page: Int, @Query("_limit") limit: Int): Single<List<Post>>
 
     /**
      * Api for fetching post's comments
      */
-    @GET("/comments")
+    @GET("/comments?_sort=date&order=asc")
     fun fetchComments(@Query("postId") postId: Int, @Query("_page") page: Int, @Query("_limit") limit: Int): Single<List<Comment>>
 
 

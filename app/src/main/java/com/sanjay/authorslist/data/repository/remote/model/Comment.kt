@@ -6,6 +6,6 @@ data class Comment(
     val body: String,
     val userName: String,
     val email: String,
-    val avatarUrl: String,
+    val avatarUrl: String?,
     val postId: Int
 )

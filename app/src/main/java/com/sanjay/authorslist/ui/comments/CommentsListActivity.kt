@@ -1,9 +1,9 @@
 /*
- * AuthorsPostsActivity.kt
+ * CommentsListActivity.kt
  * Created by Sanjay.Sah
  */
 
-package com.sanjay.authorslist.ui.posts
+package com.sanjay.authorslist.ui.comments
 
 import android.app.Activity
 import android.content.Intent
@@ -18,30 +18,31 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.sanjay.authorslist.R
 import com.sanjay.authorslist.constants.State
-import com.sanjay.authorslist.data.repository.remote.model.Author
+import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.ui.BaseActivity
-import com.sanjay.authorslist.ui.comments.CommentsListActivity
+import com.sanjay.authorslist.utils.Utility.convertUTCtoLocalTime
 import com.squareup.picasso.Picasso
-import kotlinx.android.synthetic.main.activity_author_posts.*
-import kotlinx.android.synthetic.main.content_author_header.*
-import kotlinx.android.synthetic.main.content_posts_list.*
+import kotlinx.android.synthetic.main.activity_post_comments.*
+import kotlinx.android.synthetic.main.content_comments_list.*
+import kotlinx.android.synthetic.main.content_post_header.*
+
 import javax.inject.Inject
 
 
 /**
  * Activity to display detail data
  */
-class PostsListActivity : BaseActivity() {
+class CommentsListActivity : BaseActivity() {
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
 
-    private lateinit var viewModel: PostsViewModel
-    private lateinit var postsListAdapter: PostsListAdapter
+    private lateinit var viewModel: CommentsViewModel
+    private lateinit var commentsListAdapter: CommentsListAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_author_posts)
+        setContentView(R.layout.activity_post_comments)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
@@ -49,25 +50,24 @@ class PostsListActivity : BaseActivity() {
         collapse_tool_bar.setExpandedTitleColor(Color.TRANSPARENT);
 
         activityComponent.inject(this)
-        viewModel = ViewModelProvider(this, viewModelFactory).get(PostsViewModel::class.java)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(CommentsViewModel::class.java)
         initAdapter()
         initState()
-        (intent.getParcelableExtra(EXTRA_AUTHOR) as Author).apply {
+        (intent.getParcelableExtra(EXTRA_POST) as Post).apply {
             setData(this)
             if (savedInstanceState == null)
-                viewModel.selectedAuthor.value = this
+                viewModel.selectedPost.value = this
 
         }
     }
 
-    private fun setData(author: Author) {
-        supportActionBar?.title = author.name
-
-        txt_name.text = author.name
-        txt_username.text = author.userName
-        txt_email.text = author.email
-        if (author.avatarUrl.isNotEmpty()) {
-            Picasso.get().load(author.avatarUrl).into(iv_profile)
+    private fun setData(post: Post) {
+        supportActionBar?.title = post.title
+        txt_title.text = post.title
+        txt_date.text = convertUTCtoLocalTime(post.date)
+        txt_post_body.text = post.body
+        if (post.imageUrl?.isNotEmpty() == true) {
+            Picasso.get().load(post.imageUrl).into(iv_profile)
         }
     }
 
@@ -81,19 +81,17 @@ class PostsListActivity : BaseActivity() {
      * Initializing the adapter
      */
     private fun initAdapter() {
-        postsListAdapter = PostsListAdapter({ post ->
-            CommentsListActivity.start(this, post)
-        }, {
+        commentsListAdapter = CommentsListAdapter {
             //On click of retry textview call the api again
             viewModel.retry()
-        })
-        recycler_view_posts.layoutManager =
+        }
+        recycler_view_comments.layoutManager =
             LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         //set the adapter
-        recycler_view_posts.adapter = postsListAdapter
+        recycler_view_comments.adapter = commentsListAdapter
         //Observing live data for changes, new changes are submitted to PagedAdapter
-        viewModel.postsList?.observe(this, Observer {
-            postsListAdapter.submitList(it)
+        viewModel.commentsList?.observe(this, Observer {
+            commentsListAdapter.submitList(it)
         })
     }
 
@@ -110,26 +108,19 @@ class PostsListActivity : BaseActivity() {
             txt_error.visibility =
                 if (viewModel.listIsEmpty() && state == State.ERROR) View.VISIBLE else View.GONE
             if (!viewModel.listIsEmpty()) {
-                postsListAdapter.setState(state ?: State.DONE)
+                commentsListAdapter.setState(state ?: State.DONE)
             }
         })
     }
 
     companion object {
 
-        private const val EXTRA_AUTHOR = "Author"
-        private const val SHARED_ELEMENT_PHOTO = "photo"
+        private const val EXTRA_POST = "Post"
 
-        fun start(activity: Activity, author: Author, photoImageView: ImageView) {
-
-            val options: ActivityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                activity,
-                photoImageView,
-                SHARED_ELEMENT_PHOTO
-            )
-            activity.startActivity(Intent(activity, PostsListActivity::class.java).apply {
-                putExtra(EXTRA_AUTHOR, author)
-            }, options.toBundle())
+        fun start(activity: Activity, post: Post) {
+            activity.startActivity(Intent(activity, CommentsListActivity::class.java).apply {
+                putExtra(EXTRA_POST, post)
+            })
         }
     }
 }
