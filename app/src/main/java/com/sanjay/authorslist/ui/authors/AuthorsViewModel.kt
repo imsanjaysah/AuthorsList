@@ -1,41 +1,29 @@
 package com.sanjay.authorslist.ui.authors
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.paging.DataSource
 import androidx.paging.LivePagedListBuilder
-import androidx.paging.PageKeyedDataSource
 import androidx.paging.PagedList
-import com.sanjay.authorslist.constants.State
-import com.sanjay.authorslist.data.repository.AuthorsRepository
 import com.sanjay.authorslist.data.repository.remote.model.Author
-import com.sanjay.authorslist.extensions.addToCompositeDisposable
+import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
-import io.reactivex.Completable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Action
-import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
-class AuthorsViewModel @Inject constructor(private val repository: AuthorsRepository) :
+class AuthorsViewModel @Inject constructor(private val pagingDataSourceFactory: AuthorsPagingDataSourceFactory) :
     BaseViewModel() {
-
     //LiveData object for authors
     var authorsList: LiveData<PagedList<Author>>? = null
     //LiveData object for state
-    var state = MutableLiveData<State>()
-    //Completable required for retrying the API call which gets failed due to any error like no internet
-    private var retryCompletable: Completable? = null
+    var state = pagingDataSourceFactory.authorsPagingDataSource.state
 
     init {
         //Setting up Paging for fetching the authors in pagination
         val config = PagedList.Config.Builder()
-            .setInitialLoadSizeHint(20)
-            .setPageSize(20)
+            .setInitialLoadSizeHint(INITIAL_LOAD_SIZE_HINT)
+            .setPageSize(PAGE_SIZE)
             .setEnablePlaceholders(false)
             .build()
         authorsList = LivePagedListBuilder<Int, Author>(
-            AuthorsDataSourceFactory(), config
+            pagingDataSourceFactory, config
         ).build()
     }
 
@@ -43,81 +31,13 @@ class AuthorsViewModel @Inject constructor(private val repository: AuthorsReposi
         return authorsList?.value?.isEmpty() ?: true
     }
 
-    private fun updateState(state: State) {
-        this.state.postValue(state)
-    }
-
     //Retrying the API call
     fun retry() {
-        if (retryCompletable != null) {
-            disposable.add(
-                retryCompletable!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe()
-            )
-        }
+        pagingDataSourceFactory.authorsPagingDataSource.retry()
     }
 
-    /**
-     * Creating the observable for specific page to call the API
-     */
-    private fun setRetry(action: Action?) {
-        retryCompletable = if (action == null) null else Completable.fromAction(action)
-    }
-
-    inner class AuthorsDataSourceFactory() :
-        DataSource.Factory<Int, Author>() {
-
-        override fun create(): DataSource<Int, Author> {
-            return AuthorsDataSource()
-        }
-    }
-
-    inner class AuthorsDataSource() :
-        PageKeyedDataSource<Int, Author>() {
-        override fun loadInitial(
-            params: LoadInitialParams<Int>,
-            callback: LoadInitialCallback<Int, Author>
-        ) {
-            updateState(State.LOADING)
-            val currentPage = 1
-            val nextPage = currentPage + 1
-            //Call api
-            repository.getAuthors(1, params.requestedLoadSize)
-                .subscribe(
-                    { authors ->
-                        updateState(State.DONE)
-                        callback.onResult(authors, null, nextPage)
-
-                    },
-                    {
-                        updateState(State.ERROR)
-                        setRetry(Action { loadInitial(params, callback) })
-                    }
-                ).addToCompositeDisposable(disposable)
-        }
-
-        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Author>) {
-            updateState(State.LOADING)
-            val currentPage = params.key
-            val nextPage = currentPage + 1
-            //Call api
-            repository.getAuthors(currentPage, params.requestedLoadSize)
-                .subscribe(
-                    { authors ->
-                        updateState(State.DONE)
-                        callback.onResult(authors, nextPage)
-
-                    },
-                    {
-                        updateState(State.ERROR)
-                        setRetry(Action { loadAfter(params, callback) })
-                    }
-                ).addToCompositeDisposable(disposable)
-        }
-
-        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Author>) {
-        }
+    companion object {
+        private const val PAGE_SIZE = 20
+        private const val INITIAL_LOAD_SIZE_HINT = 20
     }
 }

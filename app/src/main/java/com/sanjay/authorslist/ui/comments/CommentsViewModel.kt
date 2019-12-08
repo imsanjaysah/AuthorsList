@@ -3,42 +3,32 @@ package com.sanjay.authorslist.ui.comments
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import androidx.paging.DataSource
 import androidx.paging.LivePagedListBuilder
-import androidx.paging.PageKeyedDataSource
 import androidx.paging.PagedList
-import com.sanjay.authorslist.constants.State
-import com.sanjay.authorslist.data.repository.AuthorsRepository
 import com.sanjay.authorslist.data.repository.remote.model.Comment
 import com.sanjay.authorslist.data.repository.remote.model.Post
-import com.sanjay.authorslist.extensions.addToCompositeDisposable
+import com.sanjay.authorslist.pagination.datasource.CommentsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
-import io.reactivex.Completable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Action
-import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
-class CommentsViewModel @Inject constructor(private val repository: AuthorsRepository) :
+class CommentsViewModel @Inject constructor(private val pagingDataSourceFactory: CommentsPagingDataSourceFactory) :
     BaseViewModel() {
 
     //LiveData object for comments
     var commentsList: LiveData<PagedList<Comment>>? = null
     //LiveData object for state
-    var state = MutableLiveData<State>()
-    var selectedPost = MutableLiveData<Post>()
-    //Completable required for retrying the API call which gets failed due to any error like no internet
-    private var retryCompletable: Completable? = null
+    var state = pagingDataSourceFactory.commentsPagingDataSource.state
+    var selectedPost = pagingDataSourceFactory.commentsPagingDataSource.selectedPost
 
     init {
         val config = PagedList.Config.Builder()
-            .setInitialLoadSizeHint(20)
-            .setPageSize(20)
+            .setInitialLoadSizeHint(INITIAL_LOAD_SIZE_HINT)
+            .setPageSize(PAGE_SIZE)
             .setEnablePlaceholders(false)
             .build()
-        commentsList = Transformations.switchMap(selectedPost) { post ->
+        commentsList = Transformations.switchMap(selectedPost) {
             LivePagedListBuilder<Int, Comment>(
-                CommentsDataSourceFactory(post.id), config
+                pagingDataSourceFactory, config
             ).build()
         }
     }
@@ -48,81 +38,14 @@ class CommentsViewModel @Inject constructor(private val repository: AuthorsRepos
         return commentsList?.value?.isEmpty() ?: true
     }
 
-    private fun updateState(state: State) {
-        this.state.postValue(state)
-    }
-
     //Retrying the API call
     fun retry() {
-        if (retryCompletable != null) {
-            disposable.add(
-                retryCompletable!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe()
-            )
-        }
+        pagingDataSourceFactory.commentsPagingDataSource.retry()
     }
 
-    /**
-     * Creating the observable for specific page to call the API
-     */
-    private fun setRetry(action: Action?) {
-        retryCompletable = if (action == null) null else Completable.fromAction(action)
+    companion object {
+        private const val PAGE_SIZE = 20
+        private const val INITIAL_LOAD_SIZE_HINT = 20
     }
 
-    inner class CommentsDataSourceFactory(private val postId: Int) :
-        DataSource.Factory<Int, Comment>() {
-
-        override fun create(): DataSource<Int, Comment> {
-            return CommentsDataSource(postId)
-        }
-    }
-
-    inner class CommentsDataSource(private val postId: Int) :
-        PageKeyedDataSource<Int, Comment>() {
-        override fun loadInitial(
-            params: LoadInitialParams<Int>,
-            callback: LoadInitialCallback<Int, Comment>
-        ) {
-            updateState(State.LOADING)
-            val currentPage = 1
-            val nextPage = currentPage + 1
-            //Call api
-            repository.getComments(postId, 1, params.requestedLoadSize)
-                .subscribe(
-                    { comments ->
-                        updateState(State.DONE)
-                        callback.onResult(comments, null, nextPage)
-
-                    },
-                    {
-                        updateState(State.ERROR)
-                        setRetry(Action { loadInitial(params, callback) })
-                    }
-                ).addToCompositeDisposable(disposable)
-        }
-
-        override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Comment>) {
-            updateState(State.LOADING)
-            val currentPage = params.key
-            val nextPage = currentPage + 1
-            //Call api
-            repository.getComments(postId, currentPage, params.requestedLoadSize)
-                .subscribe(
-                    { comments ->
-                        updateState(State.DONE)
-                        callback.onResult(comments, nextPage)
-
-                    },
-                    {
-                        updateState(State.ERROR)
-                        setRetry(Action { loadAfter(params, callback) })
-                    }
-                ).addToCompositeDisposable(disposable)
-        }
-
-        override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Comment>) {
-        }
-    }
 }

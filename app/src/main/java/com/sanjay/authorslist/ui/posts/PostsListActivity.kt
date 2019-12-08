@@ -122,14 +122,14 @@ class PostsListActivity : BaseActivity() {
 
         fun start(activity: Activity, author: Author, photoImageView: ImageView) {
 
-            val options: ActivityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(
+            /*val options: ActivityOptionsCompat = ActivityOptionsCompat.makeSceneTransitionAnimation(
                 activity,
                 photoImageView,
                 SHARED_ELEMENT_PHOTO
-            )
+            )*/
             activity.startActivity(Intent(activity, PostsListActivity::class.java).apply {
                 putExtra(EXTRA_AUTHOR, author)
-            }, options.toBundle())
+            })
         }
     }
 }
