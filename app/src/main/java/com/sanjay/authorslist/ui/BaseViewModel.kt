@@ -10,11 +10,9 @@ import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.utils.SingleLiveEvent
 import io.reactivex.disposables.CompositeDisposable
 
-open class BaseViewModel : ViewModel() {
+abstract class BaseViewModel : ViewModel() {
 
-    var status = SingleLiveEvent<State>()
-
-    var disposable = CompositeDisposable()
+    abstract var disposable : CompositeDisposable
 
     override fun onCleared() {
         super.onCleared()

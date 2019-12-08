@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 class PostsPagingDataSource @Inject constructor(private val repository: AuthorsRepository) :
     PageKeyedDataSource<Int, Post>() {
-    private val disposable = CompositeDisposable()
+    val disposable = CompositeDisposable()
     //LiveData object for state
     var state = MutableLiveData<State>()
     var selectedAuthor = MutableLiveData<Author>()

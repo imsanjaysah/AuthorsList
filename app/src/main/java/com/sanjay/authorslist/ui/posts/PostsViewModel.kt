@@ -7,6 +7,7 @@ import androidx.paging.PagedList
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.pagination.datasource.PostsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
+import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
 class PostsViewModel @Inject constructor(private val pagingDataSourceFactory: PostsPagingDataSourceFactory) :
@@ -44,4 +45,8 @@ class PostsViewModel @Inject constructor(private val pagingDataSourceFactory: Po
         private const val PAGE_SIZE = 20
         private const val INITIAL_LOAD_SIZE_HINT = 20
     }
+
+    override var disposable: CompositeDisposable
+        get() = pagingDataSourceFactory.postsPagingDataSource.disposable
+        set(_) {}
 }

@@ -9,6 +9,7 @@ import com.sanjay.authorslist.data.repository.remote.model.Comment
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.pagination.datasource.CommentsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
+import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
 class CommentsViewModel @Inject constructor(private val pagingDataSourceFactory: CommentsPagingDataSourceFactory) :
@@ -42,6 +43,10 @@ class CommentsViewModel @Inject constructor(private val pagingDataSourceFactory:
     fun retry() {
         pagingDataSourceFactory.commentsPagingDataSource.retry()
     }
+
+    override var disposable: CompositeDisposable
+        get() = pagingDataSourceFactory.commentsPagingDataSource.disposable
+        set(_) {}
 
     companion object {
         private const val PAGE_SIZE = 20

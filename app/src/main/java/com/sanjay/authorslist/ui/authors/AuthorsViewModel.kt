@@ -6,6 +6,7 @@ import androidx.paging.PagedList
 import com.sanjay.authorslist.data.repository.remote.model.Author
 import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
+import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
 class AuthorsViewModel @Inject constructor(private val pagingDataSourceFactory: AuthorsPagingDataSourceFactory) :
@@ -35,6 +36,10 @@ class AuthorsViewModel @Inject constructor(private val pagingDataSourceFactory: 
     fun retry() {
         pagingDataSourceFactory.authorsPagingDataSource.retry()
     }
+
+    override var disposable: CompositeDisposable
+        get() = pagingDataSourceFactory.authorsPagingDataSource.disposable
+        set(_) {}
 
     companion object {
         private const val PAGE_SIZE = 20

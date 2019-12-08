@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 class AuthorsPagingDataSource @Inject constructor(private val repository: AuthorsRepository) :
     PageKeyedDataSource<Int, Author>() {
-    private val disposable = CompositeDisposable()
+    val disposable = CompositeDisposable()
     //LiveData object for state
     var state = MutableLiveData<State>()
     //Completable required for retrying the API call which gets failed due to any error like no internet
