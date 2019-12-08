@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.sanjay.authorslist.R
 import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.ui.BaseActivity
+import com.sanjay.authorslist.ui.posts.PostsListActivity
 import kotlinx.android.synthetic.main.activity_authors_list.*
 import kotlinx.android.synthetic.main.content_authors_list.*
 import javax.inject.Inject
@@ -37,7 +38,7 @@ class AuthorsListActivity : BaseActivity() {
     private fun initAdapter() {
         authorsListAdapter = AuthorsListAdapter({ author, imageView ->
 
-
+            PostsListActivity.start(this, author, imageView)
         }, {
             //On click of retry textview call the api again
             viewModel.retry()

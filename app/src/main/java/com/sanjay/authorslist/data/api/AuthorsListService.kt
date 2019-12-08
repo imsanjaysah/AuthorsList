@@ -26,7 +26,7 @@ interface AuthorsListService {
     /**
      * Api for fetching author's posts
      */
-    @GET("/authors")
+    @GET("/posts")
     fun fetchPosts(@Query("authorId") authorId: Int, @Query("_page") page: Int, @Query("_limit") limit: Int): Single<List<Post>>
 
     /**

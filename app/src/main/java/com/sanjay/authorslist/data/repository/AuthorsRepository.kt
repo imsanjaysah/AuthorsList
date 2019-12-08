@@ -18,11 +18,11 @@ import javax.inject.Inject
  */
 class AuthorsRepository @Inject constructor(@Local private val localDataSource: AuthorsDataSource, @Remote private val remoteDataSource: AuthorsDataSource) :
     AuthorsDataSource {
-    override fun getAuthors(page: Int, limit: Int): Flowable<List<Author>> = remoteDataSource.getAuthors(page, limit)
+    override fun getAuthors(page: Int, limit: Int): Flowable<List<Author>> =
+        remoteDataSource.getAuthors(page, limit)
 
-    override fun getPosts(authorId: Int, page: Int, limit: Int): Flowable<List<Post>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getPosts(authorId: Int, page: Int, limit: Int): Flowable<List<Post>> =
+        remoteDataSource.getPosts(authorId, page, limit)
 
     override fun getComments(postId: Int, page: Int, limit: Int): Flowable<List<Comment>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

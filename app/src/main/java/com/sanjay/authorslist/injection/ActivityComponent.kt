@@ -8,6 +8,7 @@ package com.sanjay.authorslist.injection
 import com.sanjay.authorslist.injection.annotations.PerActivity
 import com.sanjay.authorslist.injection.module.ActivityModule
 import com.sanjay.authorslist.ui.authors.AuthorsListActivity
+import com.sanjay.authorslist.ui.posts.PostsListActivity
 import dagger.Subcomponent
 
 /**
@@ -18,6 +19,5 @@ import dagger.Subcomponent
 @Subcomponent(modules = [ActivityModule::class])
 interface ActivityComponent {
     fun inject(activity: AuthorsListActivity)
-
-
+    fun inject(activity: PostsListActivity)
 }

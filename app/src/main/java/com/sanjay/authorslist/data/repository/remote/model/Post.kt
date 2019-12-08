@@ -10,6 +10,6 @@ data class Post(
     val date: String,
     val title: String,
     val body: String,
-    val imageUrl: String,
+    val imageUrl: String?,
     val authorId: Int
 ): Parcelable
