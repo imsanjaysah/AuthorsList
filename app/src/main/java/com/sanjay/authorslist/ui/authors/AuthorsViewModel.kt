@@ -1,9 +1,11 @@
 package com.sanjay.authorslist.ui.authors
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.paging.*
+import androidx.paging.DataSource
+import androidx.paging.LivePagedListBuilder
+import androidx.paging.PageKeyedDataSource
+import androidx.paging.PagedList
 import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.data.repository.AuthorsRepository
 import com.sanjay.authorslist.data.repository.remote.model.Author
