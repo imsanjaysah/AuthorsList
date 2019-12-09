@@ -7,7 +7,7 @@ import com.nhaarman.mockitokotlin2.*
 import com.sanjay.authorslist.RxImmediateSchedulerRule
 import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.data.repository.AuthorsRepository
-import com.sanjay.authorslist.data.repository.remote.model.Author
+import com.sanjay.authorslist.data.repository.remote.model.Comment
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import io.reactivex.Flowable
 import org.junit.*
@@ -16,9 +16,9 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import kotlin.test.assertEquals
 
-class PostsPagingDataSourceTest {
+class CommentsPagingDataSourceTest {
 
-    private var pagingDataSource: PostsPagingDataSource? = null
+    private var pagingDataSource: CommentsPagingDataSource? = null
 
     @Mock
     lateinit var repository: AuthorsRepository
@@ -26,12 +26,12 @@ class PostsPagingDataSourceTest {
     private var loadParams = PageKeyedDataSource.LoadParams(1, 20)
 
     @Mock
-    lateinit var loadCallback: PageKeyedDataSource.LoadCallback<Int, Post>
+    lateinit var loadCallback: PageKeyedDataSource.LoadCallback<Int, Comment>
 
     private var loadInitialParams = PageKeyedDataSource.LoadInitialParams<Int>(20, false)
 
     @Mock
-    lateinit var loadInitialCallback: PageKeyedDataSource.LoadInitialCallback<Int, Post>
+    lateinit var loadInitialCallback: PageKeyedDataSource.LoadInitialCallback<Int, Comment>
 
     companion object {
         @ClassRule
@@ -48,9 +48,9 @@ class PostsPagingDataSourceTest {
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
-        pagingDataSource = PostsPagingDataSource(repository)
-        pagingDataSource!!.selectedAuthor.value =
-            Author(1, "Sanjay", "sanjay.sah", "sanjays644@gmail.com", "")
+        pagingDataSource = CommentsPagingDataSource(repository)
+        pagingDataSource!!.selectedPost.value =
+            Post(1, "", "", "", "",1)
     }
 
     @After
@@ -60,10 +60,10 @@ class PostsPagingDataSourceTest {
 
     @Test
     fun loadInitial_Success() {
-        val postsList = emptyList<Post>()
-        val observable = Flowable.just(postsList)
+        val commentsList = emptyList<Comment>()
+        val observable = Flowable.just(commentsList)
 
-        whenever(repository.getPosts(1, 1, loadInitialParams.requestedLoadSize)).thenReturn(
+        whenever(repository.getComments(1, 1, loadInitialParams.requestedLoadSize)).thenReturn(
             observable
         )
 
@@ -75,8 +75,8 @@ class PostsPagingDataSourceTest {
         val expectedLoadingState = State.LOADING
         val expectedDoneState = State.DONE
 
-        verify(repository).getPosts(1, 1, loadInitialParams.requestedLoadSize)
-        verify(loadInitialCallback).onResult(postsList, null, 2)
+        verify(repository).getComments(1, 1, loadInitialParams.requestedLoadSize)
+        verify(loadInitialCallback).onResult(commentsList, null, 2)
         argumentCaptor.run {
             verify(observerState, times(2)).onChanged(capture())
             val (loadingState, doneState) = allValues
@@ -90,7 +90,7 @@ class PostsPagingDataSourceTest {
         val errorMessage = "Error response"
         val response = Throwable(errorMessage)
 
-        whenever(repository.getPosts(1, 1, loadInitialParams.requestedLoadSize)).thenReturn(
+        whenever(repository.getComments(1, 1, loadInitialParams.requestedLoadSize)).thenReturn(
             Flowable.error(response)
         )
 
@@ -102,7 +102,7 @@ class PostsPagingDataSourceTest {
         val expectedLoadingState = State.LOADING
         val expectedDoneState = State.ERROR
 
-        verify(repository).getPosts(1, 1, loadInitialParams.requestedLoadSize)
+        verify(repository).getComments(1, 1, loadInitialParams.requestedLoadSize)
 
         argumentCaptor.run {
             verify(observerState, times(2)).onChanged(capture())
@@ -120,7 +120,7 @@ class PostsPagingDataSourceTest {
         val response = Throwable(errorMessage)
 
         whenever(
-            repository.getPosts(
+            repository.getComments(
                 1,
                 1,
                 loadInitialParams.requestedLoadSize
@@ -133,15 +133,15 @@ class PostsPagingDataSourceTest {
 
         pagingDataSource!!.retry()
 
-        verify(repository, times(2)).getPosts(1, 1, loadInitialParams.requestedLoadSize)
+        verify(repository, times(2)).getComments(1, 1, loadInitialParams.requestedLoadSize)
     }
 
     @Test
     fun loadAfter_Success() {
-        val postsList = emptyList<Post>()
-        val observable = Flowable.just(postsList)
+        val commentsList = emptyList<Comment>()
+        val observable = Flowable.just(commentsList)
 
-        whenever(repository.getPosts(1, loadParams.key, loadParams.requestedLoadSize)).thenReturn(
+        whenever(repository.getComments(1, loadParams.key, loadParams.requestedLoadSize)).thenReturn(
             observable
         )
 
@@ -153,7 +153,7 @@ class PostsPagingDataSourceTest {
         val expectedLoadingState = State.LOADING
         val expectedDoneState = State.DONE
 
-        verify(repository).getPosts(1, loadParams.key, loadParams.requestedLoadSize)
+        verify(repository).getComments(1, loadParams.key, loadParams.requestedLoadSize)
         verify(loadCallback).onResult(any(), any())
         argumentCaptor.run {
             verify(observerState, times(2)).onChanged(capture())
@@ -169,7 +169,7 @@ class PostsPagingDataSourceTest {
         val response = Throwable(errorMessage)
 
         whenever(
-            repository.getPosts(
+            repository.getComments(
                 1,
                 loadParams.key,
                 loadParams.requestedLoadSize
@@ -184,7 +184,7 @@ class PostsPagingDataSourceTest {
         val expectedLoadingState = State.LOADING
         val expectedDoneState = State.ERROR
 
-        verify(repository).getPosts(1, loadParams.key, loadParams.requestedLoadSize)
+        verify(repository).getComments(1, loadParams.key, loadParams.requestedLoadSize)
 
         argumentCaptor.run {
             verify(observerState, times(2)).onChanged(capture())
@@ -202,7 +202,7 @@ class PostsPagingDataSourceTest {
         val response = Throwable(errorMessage)
 
         whenever(
-            repository.getPosts(
+            repository.getComments(
                 1,
                 loadParams.key,
                 loadParams.requestedLoadSize
@@ -215,6 +215,6 @@ class PostsPagingDataSourceTest {
 
         pagingDataSource!!.retry()
 
-        verify(repository, times(2)).getPosts(1, loadParams.key, loadParams.requestedLoadSize)
+        verify(repository, times(2)).getComments(1, loadParams.key, loadParams.requestedLoadSize)
     }
 }
