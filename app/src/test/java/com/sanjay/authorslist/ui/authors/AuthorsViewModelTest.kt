@@ -55,7 +55,7 @@ class AuthorsViewModelTest {
     fun test_Initialization() {
 
         assertNotNull(viewModel?.authorsList)
-        assertNotNull(viewModel?.authorsList)
+        assertNotNull(viewModel?.state)
 
         /*viewModel.state.observeForever(observerState)
         verify(observerState).onChanged(State.LOADING)*/
