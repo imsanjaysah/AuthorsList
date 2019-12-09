@@ -30,12 +30,10 @@ class AuthorsPagingDataSource @Inject constructor(private val repository: Author
     //Retrying the API call
     fun retry() {
         if (retryCompletable != null) {
-            disposable.add(
-                retryCompletable!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe()
-            )
+            retryCompletable!!
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe().addToCompositeDisposable(disposable)
         }
     }
 
