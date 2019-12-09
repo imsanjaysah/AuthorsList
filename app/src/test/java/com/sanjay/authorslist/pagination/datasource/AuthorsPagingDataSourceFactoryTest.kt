@@ -1,6 +1,7 @@
 package com.sanjay.authorslist.pagination.datasource
 
 import com.nhaarman.mockitokotlin2.verify
+import com.sanjay.authorslist.pagination.factory.AuthorsPagingDataSourceFactory
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -17,7 +18,10 @@ class AuthorsPagingDataSourceFactoryTest {
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
-        pagingDataSourceFactory = AuthorsPagingDataSourceFactory(pagingDataSource)
+        pagingDataSourceFactory =
+            AuthorsPagingDataSourceFactory(
+                pagingDataSource
+            )
     }
 
     @After

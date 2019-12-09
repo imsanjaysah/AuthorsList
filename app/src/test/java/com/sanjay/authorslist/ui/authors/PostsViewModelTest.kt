@@ -9,7 +9,7 @@ import com.sanjay.authorslist.data.repository.remote.model.Author
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.mockPagedList
 import com.sanjay.authorslist.pagination.datasource.PostsPagingDataSource
-import com.sanjay.authorslist.pagination.datasource.PostsPagingDataSourceFactory
+import com.sanjay.authorslist.pagination.factory.PostsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.posts.PostsViewModel
 import org.junit.After
 import org.junit.Before

@@ -5,7 +5,7 @@ import androidx.lifecycle.Transformations
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
 import com.sanjay.authorslist.data.repository.remote.model.Post
-import com.sanjay.authorslist.pagination.datasource.PostsPagingDataSourceFactory
+import com.sanjay.authorslist.pagination.factory.PostsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject

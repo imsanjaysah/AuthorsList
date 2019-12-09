@@ -1,13 +1,11 @@
 package com.sanjay.authorslist.ui.comments
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
 import com.sanjay.authorslist.data.repository.remote.model.Comment
-import com.sanjay.authorslist.data.repository.remote.model.Post
-import com.sanjay.authorslist.pagination.datasource.CommentsPagingDataSourceFactory
+import com.sanjay.authorslist.pagination.factory.CommentsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.BaseViewModel
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject

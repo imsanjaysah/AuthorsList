@@ -10,7 +10,7 @@ import com.sanjay.authorslist.constants.State
 import com.sanjay.authorslist.data.repository.remote.model.Author
 import com.sanjay.authorslist.mockPagedList
 import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSource
-import com.sanjay.authorslist.pagination.datasource.AuthorsPagingDataSourceFactory
+import com.sanjay.authorslist.pagination.factory.AuthorsPagingDataSourceFactory
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule

@@ -9,7 +9,7 @@ import com.sanjay.authorslist.data.repository.remote.model.Comment
 import com.sanjay.authorslist.data.repository.remote.model.Post
 import com.sanjay.authorslist.mockPagedList
 import com.sanjay.authorslist.pagination.datasource.CommentsPagingDataSource
-import com.sanjay.authorslist.pagination.datasource.CommentsPagingDataSourceFactory
+import com.sanjay.authorslist.pagination.factory.CommentsPagingDataSourceFactory
 import com.sanjay.authorslist.ui.comments.CommentsViewModel
 import org.junit.After
 import org.junit.Before
